@@ -1,4 +1,4 @@
-import 'package:spotify/domain/entities/auth/user.dart';
+import 'package:spotify/domain/entities/user_entity.dart';
 
 abstract class ProfileInfoState{}
 

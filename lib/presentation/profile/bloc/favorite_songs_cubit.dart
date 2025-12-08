@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:spotify/domain/entities/song/song.dart';
-import 'package:spotify/domain/usecases/song/get_favorite_songs.dart';
+import 'package:spotify/domain/entities/song_entity.dart';
+import 'package:spotify/domain/usecases/get_favorite_songs_usecase.dart';
 import 'package:spotify/presentation/profile/bloc/favorite_songs_state.dart';
 import 'package:spotify/service_locator.dart';
 

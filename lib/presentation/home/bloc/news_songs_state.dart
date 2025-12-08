@@ -1,4 +1,4 @@
-import 'package:spotify/domain/entities/song/song.dart';
+import 'package:spotify/domain/entities/song_entity.dart';
 
 abstract class NewsSongsState {}
 

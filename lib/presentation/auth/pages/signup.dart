@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:spotify/common/widgets/appbar/app_bar.dart';
-import 'package:spotify/common/widgets/button/basic_app_button.dart';
-import 'package:spotify/core/configs/assets/app_vectors.dart';
-import 'package:spotify/data/models/auth/create_user_req.dart';
-import 'package:spotify/domain/usecases/auth/signup.dart';
+import 'package:spotify/shared/widgets/basic_app_bar.dart';
+import 'package:spotify/shared/widgets/basic_app_button.dart';
+import 'package:spotify/core/constants/app_vectors.dart';
+import 'package:spotify/data/models/create_user_req.dart';
+import 'package:spotify/domain/usecases/signup_usecase.dart';
 import 'package:spotify/presentation/auth/pages/signin.dart';
 import 'package:spotify/presentation/home/pages/home.dart';
 import 'package:spotify/service_locator.dart';

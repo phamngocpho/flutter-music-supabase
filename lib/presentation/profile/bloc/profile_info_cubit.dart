@@ -1,5 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:spotify/domain/usecases/auth/get_user.dart';
+import 'package:spotify/domain/usecases/get_user_usecase.dart';
 import 'package:spotify/presentation/profile/bloc/profile_info_state.dart';
 import 'package:spotify/service_locator.dart';
 

@@ -6,10 +6,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:spotify/presentation/auth/pages/signup_or_siginin.dart';
 import 'package:spotify/presentation/choose_mode/bloc/theme_cubit.dart';
 
-import '../../../common/widgets/button/basic_app_button.dart';
-import '../../../core/configs/assets/app_images.dart';
-import '../../../core/configs/assets/app_vectors.dart';
-import '../../../core/configs/theme/app_colors.dart';
+import 'package:spotify/shared/widgets/basic_app_button.dart';
+import 'package:spotify/core/constants/app_images.dart';
+import 'package:spotify/core/constants/app_vectors.dart';
+import 'package:spotify/core/theme/app_colors.dart';
 
 class ChooseModePage extends StatelessWidget {
   const ChooseModePage({super.key});

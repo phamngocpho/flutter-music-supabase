@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:spotify/core/configs/assets/app_vectors.dart';
+import 'package:spotify/core/constants/app_vectors.dart';
 import 'package:spotify/presentation/intro/pages/get_started.dart';
 import 'package:spotify/presentation/home/pages/home.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
