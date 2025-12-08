@@ -39,6 +39,7 @@ class _SplashPageState extends State<SplashPage> {
     
     if (session != null) {
       // User is logged in, go to home
+      
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(

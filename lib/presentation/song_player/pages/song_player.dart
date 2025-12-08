@@ -6,7 +6,6 @@ import 'package:spotify/presentation/song_player/bloc/song_player_cubit.dart';
 import 'package:spotify/presentation/song_player/bloc/song_player_state.dart';
 
 import '../../../common/widgets/favorite_button/favorite_button.dart';
-import '../../../core/configs/constants/app_urls.dart';
 import '../../../core/configs/theme/app_colors.dart';
 
 class SongPlayerPage extends StatelessWidget {
@@ -116,47 +115,155 @@ class SongPlayerPage extends StatelessWidget {
           return Column(
             children: [
               Slider(
-                value: context.read<SongPlayerCubit>().songPosition.inSeconds.toDouble(),
+                value: state.position.inSeconds.toDouble(),
                 min: 0.0,
-                max: context.read<SongPlayerCubit>().songDuration.inSeconds.toDouble() ,
-                onChanged: (value){}
+                max: state.duration.inSeconds.toDouble(),
+                onChanged: (value) {
+                  context.read<SongPlayerCubit>().seekToPosition(
+                    Duration(seconds: value.toInt())
+                  );
+                }
              ),
              const SizedBox(height: 20,),
              Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  formatDuration(
-                    context.read<SongPlayerCubit>().songPosition
-                  )
+                  formatDuration(state.position)
                 ),
 
                 Text(
-                  formatDuration(
-                    context.read<SongPlayerCubit>().songDuration
-                  )
+                  formatDuration(state.duration)
                 )
               ],
              ),
              const SizedBox(height: 20,),
 
-             GestureDetector(
-              onTap: (){
-                context.read<SongPlayerCubit>().playOrPauseSong();
-              },
-               child: Container(
-                height: 60,
-                width: 60,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary
-                ),
-                child: Icon(
-                  context.read<SongPlayerCubit>().audioPlayer.playing ? Icons.pause : Icons.play_arrow
-                ),
-               ),
-             )
+             // Player controls with skip buttons
+             Row(
+               mainAxisAlignment: MainAxisAlignment.center,
+               children: [
+                 // Skip backward button (-10s)
+                 IconButton(
+                   iconSize: 35,
+                   onPressed: () {
+                     context.read<SongPlayerCubit>().skipBackward();
+                   },
+                   icon: const Icon(Icons.replay_10),
+                 ),
+
+                 const SizedBox(width: 20),
+
+                 // Play/Pause button (main)
+                 GestureDetector(
+                   onTap: () {
+                     context.read<SongPlayerCubit>().playOrPauseSong();
+                   },
+                   child: Container(
+                     height: 60,
+                     width: 60,
+                     decoration: const BoxDecoration(
+                       shape: BoxShape.circle,
+                       color: AppColors.primary
+                     ),
+                     child: state.isBuffering
+                         ? const Padding(
+                             padding: EdgeInsets.all(15.0),
+                             child: CircularProgressIndicator(
+                               color: Colors.white,
+                               strokeWidth: 3,
+                             ),
+                           )
+                         : Icon(
+                             state.isPlaying ? Icons.pause : Icons.play_arrow,
+                             size: 30,
+                           ),
+                   ),
+                 ),
+
+                 const SizedBox(width: 20),
+
+                 // Skip forward button (+10s)
+                 IconButton(
+                   iconSize: 35,
+                   onPressed: () {
+                     context.read<SongPlayerCubit>().skipForward();
+                   },
+                   icon: const Icon(Icons.forward_10),
+                 ),
+               ],
+             ),
+
+             const SizedBox(height: 30),
+
+             // Additional controls row
+             Row(
+               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+               children: [
+                 // Stop button
+                 IconButton(
+                   icon: const Icon(Icons.stop),
+                   iconSize: 28,
+                   onPressed: () {
+                     context.read<SongPlayerCubit>().stopSong();
+                   },
+                 ),
+
+                 // Speed control
+                 PopupMenuButton<double>(
+                   icon: const Icon(Icons.speed),
+                   onSelected: (speed) {
+                     context.read<SongPlayerCubit>().setSpeed(speed);
+                   },
+                   itemBuilder: (context) => [
+                     const PopupMenuItem(
+                       value: 0.5,
+                       child: Text('0.5x'),
+                     ),
+                     const PopupMenuItem(
+                       value: 0.75,
+                       child: Text('0.75x'),
+                     ),
+                     const PopupMenuItem(
+                       value: 1.0,
+                       child: Text('1.0x (Normal)'),
+                     ),
+                     const PopupMenuItem(
+                       value: 1.25,
+                       child: Text('1.25x'),
+                     ),
+                     const PopupMenuItem(
+                       value: 1.5,
+                       child: Text('1.5x'),
+                     ),
+                     const PopupMenuItem(
+                       value: 2.0,
+                       child: Text('2.0x'),
+                     ),
+                   ],
+                 ),
+
+                 // Volume control
+                 IconButton(
+                   icon: const Icon(Icons.volume_up),
+                   iconSize: 28,
+                   onPressed: () {
+                     // Show volume dialog
+                     _showVolumeDialog(context);
+                   },
+                 ),
+               ],
+             ),
             ],
+          );
+        }
+
+        if(state is SongPlayerFailure) {
+          return Center(
+            child: Text(
+              state.message,
+              style: const TextStyle(color: Colors.red),
+            ),
           );
         }
 
@@ -169,5 +276,56 @@ class SongPlayerPage extends StatelessWidget {
     final minutes = duration.inMinutes.remainder(60);
     final seconds = duration.inSeconds.remainder(60);
     return '${minutes.toString().padLeft(2,'0')}:${seconds.toString().padLeft(2,'0')}';
+  }
+
+  // Show volume control dialog
+  void _showVolumeDialog(BuildContext context) {
+    double currentVolume = 0.5; // Default volume
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Âm lượng'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.volume_down),
+                      Expanded(
+                        child: Slider(
+                          value: currentVolume,
+                          min: 0.0,
+                          max: 1.0,
+                          divisions: 20,
+                          label: '${(currentVolume * 100).round()}%',
+                          onChanged: (value) {
+                            setState(() {
+                              currentVolume = value;
+                            });
+                            context.read<SongPlayerCubit>().setVolume(value);
+                          },
+                        ),
+                      ),
+                      const Icon(Icons.volume_up),
+                    ],
+                  ),
+                  Text('${(currentVolume * 100).round()}%'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Đóng'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }
