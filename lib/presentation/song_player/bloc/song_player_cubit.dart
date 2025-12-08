@@ -17,6 +17,7 @@ class SongPlayerCubit extends Cubit<SongPlayerState> {
   Duration _songPosition = Duration.zero;
   bool _isPlaying = false;
   bool _isBuffering = false;
+  double _currentVolume = 0.5; // Default volume at 50%
 
   // Stream subscriptions for proper cleanup
   StreamSubscription<Duration>? _positionSubscription;
@@ -24,6 +25,9 @@ class SongPlayerCubit extends Cubit<SongPlayerState> {
   StreamSubscription<bool>? _bufferingSubscription;
 
   SongPlayerCubit() : super(SongPlayerLoading());
+
+  // Getter for current volume
+  double get currentVolume => _currentVolume;
 
   /// Load and prepare audio from URL with custom streaming
   Future<void> loadSong(String url) async {
@@ -229,6 +233,7 @@ class SongPlayerCubit extends Cubit<SongPlayerState> {
   Future<void> setVolume(double volume) async {
     try {
       final clampedVolume = volume.clamp(0.0, 1.0);
+      _currentVolume = clampedVolume; // Save the volume value
       await _audioPlayer.setVolume(clampedVolume);
     } catch (e) {
       _handleError('Failed to set volume: $e');

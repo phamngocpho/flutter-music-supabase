@@ -248,8 +248,10 @@ class SongPlayerPage extends StatelessWidget {
                    icon: const Icon(Icons.volume_up),
                    iconSize: 28,
                    onPressed: () {
+                     // Capture the cubit before opening dialog
+                     final cubit = context.read<SongPlayerCubit>();
                      // Show volume dialog
-                     _showVolumeDialog(context);
+                     _showVolumeDialog(context, cubit);
                    },
                  ),
                ],
@@ -279,14 +281,14 @@ class SongPlayerPage extends StatelessWidget {
   }
 
   // Show volume control dialog
-  void _showVolumeDialog(BuildContext context) {
-    double currentVolume = 0.5; // Default volume
+  void _showVolumeDialog(BuildContext context, SongPlayerCubit songPlayerCubit) {
+    double currentVolume = songPlayerCubit.currentVolume; // Get current volume from cubit
 
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (statefulContext, setState) {
             return AlertDialog(
               title: const Text('Âm lượng'),
               content: Column(
@@ -306,7 +308,8 @@ class SongPlayerPage extends StatelessWidget {
                             setState(() {
                               currentVolume = value;
                             });
-                            context.read<SongPlayerCubit>().setVolume(value);
+                            // Use the captured cubit instead of context.read
+                            songPlayerCubit.setVolume(value);
                           },
                         ),
                       ),
