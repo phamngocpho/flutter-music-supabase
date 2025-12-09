@@ -116,7 +116,7 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
       await _supabase
           .from('Songs')
           .update(request.toJson())
-          .eq('id', int.parse(request.id));
+          .eq('id', request.id);
       return const Right('Song updated successfully');
     } catch (e) {
       return Left('Failed to update song: ${e.toString()}');
@@ -126,7 +126,7 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
   @override
   Future<Either> deleteSong(String songId) async {
     try {
-      await _supabase.from('Songs').delete().eq('id', int.parse(songId));
+      await _supabase.from('Songs').delete().eq('id', songId);
       return const Right('Song deleted successfully');
     } catch (e) {
       return Left('Failed to delete song: ${e.toString()}');
