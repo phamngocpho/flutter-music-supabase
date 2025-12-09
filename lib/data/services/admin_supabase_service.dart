@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:dartz/dartz.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:spotify/data/models/song_model.dart';
 import 'package:spotify/data/models/song_request.dart';
 import 'package:spotify/domain/entities/song_entity.dart';
@@ -17,9 +18,11 @@ abstract class AdminSupabaseService {
 
 class AdminSupabaseServiceImpl extends AdminSupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
-  static const String _adminEmail = 'phamngocpho@duck.com';
-  static const String _storageBucket = 'songs';
-  static const String _coverBucket = 'song-covers';
+
+  // Read from environment variables
+  String get _adminEmail => dotenv.env['ADMIN_EMAIL'] ?? 'phamngocpho@duck.com';
+  String get _storageBucket => dotenv.env['SONGS_BUCKET'] ?? 'songs';
+  String get _coverBucket => dotenv.env['COVERS_BUCKET'] ?? 'song-covers';
 
   @override
   bool isAdmin(String email) {
