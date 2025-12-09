@@ -23,6 +23,7 @@ dependencies:
   dartz:
   just_audio:
   http:
+  file_picker: ^8.0.0+1
 
 dev_dependencies:
   flutter_test:
