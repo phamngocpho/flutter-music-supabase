@@ -11,6 +11,7 @@ abstract class AdminSupabaseService {
   Future<Either> updateSong(UpdateSongRequest request);
   Future<Either> deleteSong(String songId);
   Future<Either<String, String>> uploadSongFile(Uint8List fileBytes, String fileName);
+  Future<Either<String, String>> uploadCoverImage(Uint8List fileBytes, String fileName);
   bool isAdmin(String email);
 }
 
@@ -18,6 +19,7 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
   final SupabaseClient _supabase = Supabase.instance.client;
   static const String _adminEmail = 'phamngocpho@duck.com';
   static const String _storageBucket = 'songs';
+  static const String _coverBucket = 'song-covers';
 
   @override
   bool isAdmin(String email) {
@@ -44,6 +46,36 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
       return Right(publicUrl);
     } catch (e) {
       return Left('Failed to upload file: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<Either<String, String>> uploadCoverImage(Uint8List fileBytes, String fileName) async {
+    try {
+      // Generate unique file name
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final uniqueFileName = 'cover_$timestamp.jpg';
+
+      // Upload image bytes to Supabase Storage
+      await _supabase.storage
+          .from(_coverBucket)
+          .uploadBinary(
+            uniqueFileName,
+            fileBytes,
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+              upsert: false,
+            ),
+          );
+
+      // Get public URL
+      final publicUrl = _supabase.storage
+          .from(_coverBucket)
+          .getPublicUrl(uniqueFileName);
+
+      return Right(publicUrl);
+    } catch (e) {
+      return Left('Failed to upload cover: ${e.toString()}');
     }
   }
 

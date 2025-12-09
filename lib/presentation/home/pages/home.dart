@@ -5,10 +5,14 @@ import 'package:spotify/core/constants/app_images.dart';
 import 'package:spotify/core/theme/app_colors.dart';
 import 'package:spotify/presentation/home/widgets/news_songs.dart';
 import 'package:spotify/presentation/home/widgets/play_list.dart';
+import 'package:spotify/presentation/home/widgets/artist_list_tab.dart';
+import 'package:spotify/presentation/home/widgets/genre_list_tab.dart';
 import 'package:spotify/presentation/profile/pages/profile.dart';
+import 'package:spotify/presentation/auth/pages/signup_or_siginin.dart';
 
 import 'package:spotify/shared/widgets/basic_app_bar.dart';
 import 'package:spotify/core/constants/app_vectors.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,16 +35,49 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     return Scaffold(
        appBar: BasicAppbar(
         hideBack: true,
-        action: IconButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (BuildContext context) => const ProfilePage())
-            );
+        action: PopupMenuButton<String>(
+          icon: const Icon(Icons.person),
+          onSelected: (value) async {
+            if (value == 'profile') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage())
+              );
+            } else if (value == 'logout') {
+              await Supabase.instance.client.auth.signOut();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SignupOrSigninPage()),
+                  (route) => false,
+                );
+              }
+            }
           },
-          icon: const Icon(
-            Icons.person
-          )
+          itemBuilder: (BuildContext context) {
+            return [
+              const PopupMenuItem<String>(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person),
+                    SizedBox(width: 8),
+                    Text('Profile'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Logout', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ];
+          },
         ),
         title: SvgPicture.asset(
           AppVectors.logo,
@@ -58,11 +95,11 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
               height: 260,
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  const NewsSongs(),
-                  Container(),
-                  Container(),
-                  Container()
+                children: const [
+                  NewsSongs(),
+                  Center(child: Text('Videos coming soon...')),
+                  ArtistListTab(),
+                  GenreListTab(),
                 ],
               ),
             ),
@@ -135,7 +172,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ),
         ),
         Text(
-          'Podcasts',
+          'Genres',
            style: TextStyle(
             fontWeight: FontWeight.w500,
             fontSize: 16

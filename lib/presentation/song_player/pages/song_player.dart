@@ -64,12 +64,48 @@ class SongPlayerPage extends StatelessWidget {
       height: MediaQuery.of(context).size.height / 2,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        image: DecorationImage(
-          fit: BoxFit.cover,
-          image: NetworkImage(
-             'https://dummyimage.com/400x400/333/fff&text=${Uri.encodeComponent(songEntity.title)}'
-          )
-        )
+        color: Colors.grey.shade900,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: songEntity.coverUrl != null
+            ? Image.network(
+                songEntity.coverUrl!,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return _buildCoverPlaceholder();
+                },
+              )
+            : _buildCoverPlaceholder(),
+      ),
+    );
+  }
+
+  Widget _buildCoverPlaceholder() {
+    return Container(
+      color: Colors.grey.shade900,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.music_note,
+              size: 100,
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              songEntity.title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

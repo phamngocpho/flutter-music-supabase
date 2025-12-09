@@ -32,6 +32,11 @@ class AdminRepositoryImpl extends AdminRepository {
   }
 
   @override
+  Future<Either<String, String>> uploadCoverImage(Uint8List fileBytes, String fileName) async {
+    return await sl<AdminSupabaseService>().uploadCoverImage(fileBytes, fileName);
+  }
+
+  @override
   bool isAdmin(String email) {
     return sl<AdminSupabaseService>().isAdmin(email);
   }

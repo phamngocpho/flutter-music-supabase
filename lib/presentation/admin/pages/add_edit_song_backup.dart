@@ -8,7 +8,6 @@ import 'package:spotify/domain/entities/song_entity.dart';
 import 'package:spotify/domain/usecases/admin/add_song_usecase.dart';
 import 'package:spotify/domain/usecases/admin/update_song_usecase.dart';
 import 'package:spotify/domain/usecases/admin/upload_song_file_usecase.dart';
-import 'package:spotify/domain/usecases/admin/upload_cover_image_usecase.dart';
 import 'package:spotify/service_locator.dart';
 import 'package:spotify/shared/widgets/basic_app_bar.dart';
 import 'package:spotify/shared/widgets/basic_app_button.dart';
@@ -26,21 +25,15 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _artistController;
-  late TextEditingController _genreController;
   late DateTime _releaseDate;
   bool _isLoading = false;
   bool _isUploading = false;
   bool _isDetectingDuration = false;
 
-  // Audio file upload
+  // File upload
   Uint8List? _selectedFileBytes;
   String? _selectedFileName;
   String? _uploadedUrl;
-
-  // Cover image upload
-  Uint8List? _selectedCoverBytes;
-  String? _selectedCoverName;
-  String? _uploadedCoverUrl;
 
   // Duration (auto-detected)
   Duration? _detectedDuration;
@@ -52,10 +45,8 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
     super.initState();
     _titleController = TextEditingController(text: widget.song?.title ?? '');
     _artistController = TextEditingController(text: widget.song?.artist ?? '');
-    _genreController = TextEditingController(text: widget.song?.genre ?? '');
     _releaseDate = widget.song?.releaseDate ?? DateTime.now();
     _uploadedUrl = widget.song?.url;
-    _uploadedCoverUrl = widget.song?.coverUrl;
     if (widget.song != null) {
       _detectedDuration = Duration(seconds: widget.song!.duration.toInt());
     }
@@ -65,16 +56,15 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
   void dispose() {
     _titleController.dispose();
     _artistController.dispose();
-    _genreController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickAudioFile() async {
+  Future<void> _pickFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.audio,
         allowMultiple: false,
-        withData: true,
+        withData: true, // Important: get bytes for web support
       );
 
       if (result != null && result.files.single.bytes != null) {
@@ -85,30 +75,11 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
           _detectedDuration = null;
         });
 
+        // Auto-detect duration
         await _detectDuration();
       }
     } catch (e) {
-      _showSnackBar('Failed to pick audio file: ${e.toString()}', isError: true);
-    }
-  }
-
-  Future<void> _pickCoverImage() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-        withData: true,
-      );
-
-      if (result != null && result.files.single.bytes != null) {
-        setState(() {
-          _selectedCoverBytes = result.files.single.bytes;
-          _selectedCoverName = result.files.single.name;
-          _uploadedCoverUrl = null;
-        });
-      }
-    } catch (e) {
-      _showSnackBar('Failed to pick image: ${e.toString()}', isError: true);
+      _showSnackBar('Failed to pick file: ${e.toString()}', isError: true);
     }
   }
 
@@ -119,28 +90,37 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
 
     try {
       final player = AudioPlayer();
+
+      // Create a data source from bytes
       final audioSource = _AudioBytesSource(_selectedFileBytes!);
       final duration = await player.setAudioSource(audioSource);
 
       if (duration != null) {
-        setState(() => _detectedDuration = duration);
+        setState(() {
+          _detectedDuration = duration;
+        });
       }
 
       await player.dispose();
     } catch (e) {
+      // If detection fails, user can still enter manually
       debugPrint('Duration detection failed: $e');
     } finally {
       setState(() => _isDetectingDuration = false);
     }
   }
 
-  Future<String?> _uploadAudioFile() async {
+  Future<String?> _uploadFile() async {
     if (_selectedFileBytes == null) return _uploadedUrl;
+
+    setState(() => _isUploading = true);
 
     var result = await sl<UploadSongFileUseCase>().call(
       fileBytes: _selectedFileBytes!,
       fileName: _selectedFileName!,
     );
+
+    setState(() => _isUploading = false);
 
     return result.fold(
       (error) {
@@ -149,26 +129,6 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
       },
       (url) {
         setState(() => _uploadedUrl = url);
-        return url;
-      },
-    );
-  }
-
-  Future<String?> _uploadCoverImage() async {
-    if (_selectedCoverBytes == null) return _uploadedCoverUrl;
-
-    var result = await sl<UploadCoverImageUseCase>().call(
-      fileBytes: _selectedCoverBytes!,
-      fileName: _selectedCoverName!,
-    );
-
-    return result.fold(
-      (error) {
-        _showSnackBar(error, isError: true);
-        return null;
-      },
-      (url) {
-        setState(() => _uploadedCoverUrl = url);
         return url;
       },
     );
@@ -183,7 +143,9 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: AppColors.primary),
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+            ),
           ),
           child: child!,
         );
@@ -197,40 +159,30 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Validate file for new songs
     if (!isEditing && _selectedFileBytes == null && _uploadedUrl == null) {
       _showSnackBar('Please select an audio file', isError: true);
       return;
     }
 
+    // Validate duration
     if (_detectedDuration == null) {
       _showSnackBar('Could not detect duration. Please try another file.', isError: true);
       return;
     }
 
     setState(() => _isLoading = true);
-    setState(() => _isUploading = true);
 
     try {
-      // Upload files if selected
+      // Upload file if selected
       String? songUrl = _uploadedUrl;
-      String? coverUrl = _uploadedCoverUrl;
-
       if (_selectedFileBytes != null) {
-        songUrl = await _uploadAudioFile();
+        songUrl = await _uploadFile();
         if (songUrl == null) {
-          setState(() {
-            _isLoading = false;
-            _isUploading = false;
-          });
+          setState(() => _isLoading = false);
           return;
         }
       }
-
-      if (_selectedCoverBytes != null) {
-        coverUrl = await _uploadCoverImage();
-      }
-
-      setState(() => _isUploading = false);
 
       final duration = _detectedDuration!.inSeconds;
 
@@ -243,8 +195,6 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
             duration: duration,
             releaseDate: _releaseDate,
             url: songUrl ?? widget.song!.url,
-            coverUrl: coverUrl,
-            genre: _genreController.text.isEmpty ? null : _genreController.text,
           ),
         );
 
@@ -263,8 +213,6 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
             duration: duration,
             releaseDate: _releaseDate,
             url: songUrl!,
-            coverUrl: coverUrl,
-            genre: _genreController.text.isEmpty ? null : _genreController.text,
           ),
         );
 
@@ -279,10 +227,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
     } catch (e) {
       _showSnackBar('Invalid input: ${e.toString()}', isError: true);
     } finally {
-      setState(() {
-        _isLoading = false;
-        _isUploading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -318,8 +263,6 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildCoverImagePicker(),
-              const SizedBox(height: 16),
               _buildTextField(
                 controller: _titleController,
                 label: 'Title',
@@ -344,13 +287,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
                 },
               ),
               const SizedBox(height: 16),
-              _buildTextField(
-                controller: _genreController,
-                label: 'Genre (Optional)',
-                icon: Icons.category,
-              ),
-              const SizedBox(height: 16),
-              _buildAudioFilePicker(),
+              _buildFilePicker(),
               const SizedBox(height: 16),
               _buildDurationDisplay(),
               const SizedBox(height: 16),
@@ -362,7 +299,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
                         children: [
                           const CircularProgressIndicator(color: AppColors.primary),
                           const SizedBox(height: 8),
-                          Text(_isUploading ? 'Uploading files...' : 'Saving...'),
+                          Text(_isUploading ? 'Uploading file...' : 'Saving...'),
                         ],
                       ),
                     )
@@ -377,67 +314,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
     );
   }
 
-  Widget _buildCoverImagePicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Cover Image',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: _pickCoverImage,
-          child: Container(
-            height: 200,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.grey.shade900,
-            ),
-            child: _selectedCoverBytes != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.memory(
-                      _selectedCoverBytes!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
-                  )
-                : _uploadedCoverUrl != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          _uploadedCoverUrl!,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildCoverPlaceholder();
-                          },
-                        ),
-                      )
-                    : _buildCoverPlaceholder(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCoverPlaceholder() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.image, size: 60, color: Colors.grey.shade600),
-        const SizedBox(height: 8),
-        Text(
-          'Tap to select cover image',
-          style: TextStyle(color: Colors.grey.shade600),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAudioFilePicker() {
+  Widget _buildFilePicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -447,7 +324,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
         ),
         const SizedBox(height: 8),
         InkWell(
-          onTap: _pickAudioFile,
+          onTap: _pickFile,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -644,4 +521,3 @@ class _AudioBytesSource extends StreamAudioSource {
     );
   }
 }
-

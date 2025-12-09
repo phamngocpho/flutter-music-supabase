@@ -213,7 +213,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             color: AppColors.primary.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.music_note, color: AppColors.primary),
+          child: song.coverUrl != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    song.coverUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.music_note, color: AppColors.primary);
+                    },
+                  ),
+                )
+              : const Icon(Icons.music_note, color: AppColors.primary),
         ),
         title: Text(
           song.title,
@@ -223,6 +234,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(song.artist),
+            if (song.genre != null)
+              Text(
+                song.genre!,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: context.isDarkMode ? Colors.white38 : Colors.grey.shade500,
+                ),
+              ),
             Text(
               'Duration: ${_formatDuration(song.duration)}',
               style: TextStyle(

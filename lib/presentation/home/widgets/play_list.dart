@@ -88,19 +88,40 @@ class PlayList extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  // Cover Image
                   Container(
-                    height: 45,
-                    width: 45,
+                    height: 60,
+                    width: 60,
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: context.isDarkMode ? AppColors.darkGrey : const Color(0xffE6E6E6)
+                      borderRadius: BorderRadius.circular(12),
+                      color: context.isDarkMode ? AppColors.darkGrey : const Color(0xffE6E6E6),
                     ),
-                    child: Icon(
-                      Icons.play_arrow_rounded,
-                      color: context.isDarkMode ? const Color(0xff959595) : const Color(0xff555555) ,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: songs[index].coverUrl != null
+                          ? Image.network(
+                              songs[index].coverUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.music_note,
+                                  color: context.isDarkMode
+                                      ? const Color(0xff959595)
+                                      : const Color(0xff555555),
+                                  size: 30,
+                                );
+                              },
+                            )
+                          : Icon(
+                              Icons.music_note,
+                              color: context.isDarkMode
+                                  ? const Color(0xff959595)
+                                  : const Color(0xff555555),
+                              size: 30,
+                            ),
                     ),
                   ),
-                  const SizedBox(width: 10,),
+                  const SizedBox(width: 12,),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -112,7 +133,7 @@ class PlayList extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 5,),
-                       Text(
+                      Text(
                         songs[index].artist,
                         style: const TextStyle(
                           fontWeight: FontWeight.w400,

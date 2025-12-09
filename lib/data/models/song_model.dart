@@ -8,6 +8,8 @@ class SongModel {
   bool? isFavorite;
   String? songId;
   String? url;
+  String? coverUrl;
+  String? genre;
 
   SongModel({
     required this.title,
@@ -16,7 +18,9 @@ class SongModel {
     required this.releaseDate,
     required this.isFavorite,
     required this.songId,
-    this.url
+    this.url,
+    this.coverUrl,
+    this.genre,
   });
 
   SongModel.fromJson(Map<String, dynamic> data) {
@@ -24,6 +28,8 @@ class SongModel {
     artist = data['artist'];
     duration = data['duration'];
     url = data['url'];
+    coverUrl = data['coverUrl'];
+    genre = data['genre'];
     releaseDate = data['releaseDate'] != null
       ? DateTime.parse(data['releaseDate'])
       : null;
@@ -39,7 +45,9 @@ extension SongModelX on SongModel {
       releaseDate: releaseDate!,
       isFavorite: isFavorite!,
       songId: songId!,
-      url: url ?? ''
+      url: url ?? '',
+      coverUrl: coverUrl,
+      genre: genre,
     );
   }
 }

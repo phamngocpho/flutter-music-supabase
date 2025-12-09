@@ -4,6 +4,8 @@ class CreateSongRequest {
   final num duration;
   final DateTime releaseDate;
   final String url;
+  final String? coverUrl;
+  final String? genre;
 
   CreateSongRequest({
     required this.title,
@@ -11,6 +13,8 @@ class CreateSongRequest {
     required this.duration,
     required this.releaseDate,
     required this.url,
+    this.coverUrl,
+    this.genre,
   });
 
   Map<String, dynamic> toJson() {
@@ -20,6 +24,8 @@ class CreateSongRequest {
       'duration': duration,
       'releaseDate': releaseDate.toIso8601String(),
       'url': url,
+      'coverUrl': coverUrl,
+      'genre': genre,
     };
   }
 }
@@ -31,6 +37,8 @@ class UpdateSongRequest {
   final num duration;
   final DateTime releaseDate;
   final String url;
+  final String? coverUrl;
+  final String? genre;
 
   UpdateSongRequest({
     required this.id,
@@ -39,6 +47,8 @@ class UpdateSongRequest {
     required this.duration,
     required this.releaseDate,
     required this.url,
+    this.coverUrl,
+    this.genre,
   });
 
   Map<String, dynamic> toJson() {
@@ -48,6 +58,8 @@ class UpdateSongRequest {
       'duration': duration,
       'releaseDate': releaseDate.toIso8601String(),
       'url': url,
+      'coverUrl': coverUrl,
+      'genre': genre,
     };
   }
 }
