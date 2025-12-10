@@ -8,6 +8,7 @@ class SongEntity {
   final String url;
   final String? coverUrl;
   final String? genre;
+  final String? lyricsUrl;
 
   SongEntity({
     required this.title,
@@ -19,6 +20,7 @@ class SongEntity {
     required this.url,
     this.coverUrl,
     this.genre,
+    this.lyricsUrl,
   });
 }
 

@@ -20,6 +20,7 @@ import 'package:spotify/domain/usecases/admin/get_all_songs_admin_usecase.dart';
 import 'package:spotify/domain/usecases/admin/check_admin_usecase.dart';
 import 'package:spotify/domain/usecases/admin/upload_song_file_usecase.dart';
 import 'package:spotify/domain/usecases/admin/upload_cover_image_usecase.dart';
+import 'package:spotify/domain/usecases/admin/upload_lyrics_file_usecase.dart';
 
 import 'data/repositories/song_repository_impl.dart';
 import 'data/services/song_supabase_service.dart';
@@ -116,5 +117,9 @@ Future<void> initializeDependencies() async {
 
   sl.registerSingleton<UploadCoverImageUseCase>(
     UploadCoverImageUseCase()
+  );
+
+  sl.registerSingleton<UploadLyricsFileUseCase>(
+    UploadLyricsFileUseCase()
   );
 }

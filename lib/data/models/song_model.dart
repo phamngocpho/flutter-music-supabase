@@ -10,6 +10,7 @@ class SongModel {
   String? url;
   String? coverUrl;
   String? genre;
+  String? lyricsUrl;
 
   SongModel({
     required this.title,
@@ -21,6 +22,7 @@ class SongModel {
     this.url,
     this.coverUrl,
     this.genre,
+    this.lyricsUrl,
   });
 
   SongModel.fromJson(Map<String, dynamic> data) {
@@ -30,6 +32,7 @@ class SongModel {
     url = data['url'];
     coverUrl = data['coverUrl'];
     genre = data['genre'];
+    lyricsUrl = data['lyricsUrl'];
     releaseDate = data['releaseDate'] != null
       ? DateTime.parse(data['releaseDate'])
       : null;
@@ -48,6 +51,7 @@ extension SongModelX on SongModel {
       url: url ?? '',
       coverUrl: coverUrl,
       genre: genre,
+      lyricsUrl: lyricsUrl,
     );
   }
 }

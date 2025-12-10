@@ -9,6 +9,7 @@ import 'package:spotify/domain/usecases/admin/add_song_usecase.dart';
 import 'package:spotify/domain/usecases/admin/update_song_usecase.dart';
 import 'package:spotify/domain/usecases/admin/upload_song_file_usecase.dart';
 import 'package:spotify/domain/usecases/admin/upload_cover_image_usecase.dart';
+import 'package:spotify/domain/usecases/admin/upload_lyrics_file_usecase.dart';
 import 'package:spotify/service_locator.dart';
 import 'package:spotify/shared/widgets/basic_app_bar.dart';
 import 'package:spotify/shared/widgets/basic_app_button.dart';
@@ -42,6 +43,11 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
   String? _selectedCoverName;
   String? _uploadedCoverUrl;
 
+  // Lyrics file upload
+  Uint8List? _selectedLyricsBytes;
+  String? _selectedLyricsName;
+  String? _uploadedLyricsUrl;
+
   // Duration (auto-detected)
   Duration? _detectedDuration;
 
@@ -56,6 +62,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
     _releaseDate = widget.song?.releaseDate ?? DateTime.now();
     _uploadedUrl = widget.song?.url;
     _uploadedCoverUrl = widget.song?.coverUrl;
+    _uploadedLyricsUrl = widget.song?.lyricsUrl;
     if (widget.song != null) {
       _detectedDuration = Duration(seconds: widget.song!.duration.toInt());
     }
@@ -109,6 +116,27 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
       }
     } catch (e) {
       _showSnackBar('Failed to pick image: ${e.toString()}', isError: true);
+    }
+  }
+
+  Future<void> _pickLyricsFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['lrc', 'txt'],
+        allowMultiple: false,
+        withData: true,
+      );
+
+      if (result != null && result.files.single.bytes != null) {
+        setState(() {
+          _selectedLyricsBytes = result.files.single.bytes;
+          _selectedLyricsName = result.files.single.name;
+          _uploadedLyricsUrl = null;
+        });
+      }
+    } catch (e) {
+      _showSnackBar('Failed to pick lyrics file: ${e.toString()}', isError: true);
     }
   }
 
@@ -174,6 +202,26 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
     );
   }
 
+  Future<String?> _uploadLyricsFile() async {
+    if (_selectedLyricsBytes == null) return _uploadedLyricsUrl;
+
+    var result = await sl<UploadLyricsFileUseCase>().call(
+      fileBytes: _selectedLyricsBytes!,
+      fileName: _selectedLyricsName!,
+    );
+
+    return result.fold(
+      (error) {
+        _showSnackBar(error, isError: true);
+        return null;
+      },
+      (url) {
+        setState(() => _uploadedLyricsUrl = url);
+        return url;
+      },
+    );
+  }
+
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -214,6 +262,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
       // Upload files if selected
       String? songUrl = _uploadedUrl;
       String? coverUrl = _uploadedCoverUrl;
+      String? lyricsUrl = _uploadedLyricsUrl;
 
       if (_selectedFileBytes != null) {
         songUrl = await _uploadAudioFile();
@@ -228,6 +277,10 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
 
       if (_selectedCoverBytes != null) {
         coverUrl = await _uploadCoverImage();
+      }
+
+      if (_selectedLyricsBytes != null) {
+        lyricsUrl = await _uploadLyricsFile();
       }
 
       setState(() => _isUploading = false);
@@ -245,6 +298,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
             url: songUrl ?? widget.song!.url,
             coverUrl: coverUrl,
             genre: _genreController.text.isEmpty ? null : _genreController.text,
+            lyricsUrl: lyricsUrl,
           ),
         );
 
@@ -265,6 +319,7 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
             url: songUrl!,
             coverUrl: coverUrl,
             genre: _genreController.text.isEmpty ? null : _genreController.text,
+            lyricsUrl: lyricsUrl,
           ),
         );
 
@@ -351,6 +406,8 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
               ),
               const SizedBox(height: 16),
               _buildAudioFilePicker(),
+              const SizedBox(height: 16),
+              _buildLyricsFilePicker(),
               const SizedBox(height: 16),
               _buildDurationDisplay(),
               const SizedBox(height: 16),
@@ -525,6 +582,85 @@ class _AddEditSongPageState extends State<AddEditSongPage> {
     );
   }
 
+  Widget _buildLyricsFilePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Lyrics File (Optional - LRC format)',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: _pickLyricsFile,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _selectedLyricsBytes != null || _uploadedLyricsUrl != null
+                      ? Icons.lyrics
+                      : Icons.upload_file,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedLyricsName ??
+                            (_uploadedLyricsUrl != null
+                                ? 'Lyrics file uploaded'
+                                : 'Tap to select lyrics file (.lrc)'),
+                        style: TextStyle(
+                          color: _selectedLyricsBytes != null || _uploadedLyricsUrl != null
+                              ? Colors.black87
+                              : Colors.grey,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_selectedLyricsBytes != null)
+                        Text(
+                          'Ready to upload',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      if (_uploadedLyricsUrl != null && _selectedLyricsBytes == null)
+                        const Text(
+                          'Lyrics file already uploaded',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (_selectedLyricsBytes != null)
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        _selectedLyricsBytes = null;
+                        _selectedLyricsName = null;
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDurationDisplay() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -644,4 +780,3 @@ class _AudioBytesSource extends StreamAudioSource {
     );
   }
 }
-

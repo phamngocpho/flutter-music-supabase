@@ -8,6 +8,10 @@ A modern, full-featured music streaming application built with Flutter and Supab
 - User authentication (Sign up / Sign in / Logout)
 - Browse songs with beautiful cover images
 - Play songs with fullscreen player interface
+- **Synchronized lyrics display (LRC format support)**
+  - Real-time lyrics highlighting
+  - Auto-scroll following playback position
+  - Support for both LRC and plain text lyrics
 - Add/remove favorite songs
 - View songs by categories:
   - News (Latest releases)
@@ -23,7 +27,8 @@ A modern, full-featured music streaming application built with Flutter and Supab
 - Complete song management dashboard:
   - Add new songs with audio file upload
   - Upload cover images for songs
-  - Edit existing songs (title, artist, genre, cover, audio file)
+  - **Upload lyrics files (LRC format) for synchronized lyrics display**
+  - Edit existing songs (title, artist, genre, cover, audio file, lyrics)
   - Delete songs with confirmation
   - Auto-detect song duration from audio file
 - View all songs with cover thumbnails
@@ -103,6 +108,7 @@ lib/
 - url (text, song file URL)
 - coverUrl (text, cover image URL)
 - genre (text, nullable)
+- lyricsUrl (text, nullable, lyrics file URL)
 ```
 
 ### Users Table
@@ -125,6 +131,7 @@ lib/
 
 - **songs**: Audio files (.mp3, .m4a, etc.)
 - **song-covers**: Cover images (.jpg, .png)
+- **lyrics**: Lyrics files (.lrc, .txt)
 
 ## Setup Instructions
 
@@ -151,7 +158,7 @@ flutter pub get
 3. **Setup Supabase**
    - Create a new project on [Supabase](https://supabase.com)
    - Create the required tables (Songs, Users, Favorites)
-   - Create storage buckets (songs, song-covers)
+   - Create storage buckets (songs, song-covers, lyrics)
    - Setup Row Level Security policies (see SUPABASE_CONFIG.md)
 
 4. **Configure Environment Variables**
@@ -167,6 +174,7 @@ flutter pub get
    ADMIN_PASSWORD=your_secure_password
    SONGS_BUCKET=songs
    COVERS_BUCKET=song-covers
+   LYRICS_BUCKET=lyrics
    ```
 
 5. **Run the application**
@@ -273,6 +281,154 @@ flutter build web --release
 
 See `SECURITY_GUIDE.md` for detailed security practices.
 
+## Database Migration Guide
+
+### Adding Lyrics Feature to Existing Database
+
+If you're upgrading from a previous version without lyrics support, follow these steps:
+
+#### Step 1: Add lyricsUrl Column to Songs Table
+
+Execute this SQL in your Supabase SQL Editor:
+
+```sql
+-- Add lyricsUrl column to Songs table
+ALTER TABLE "Songs" 
+ADD COLUMN "lyricsUrl" TEXT;
+
+-- Add a comment to document the column
+COMMENT ON COLUMN "Songs"."lyricsUrl" IS 'URL to the lyrics file (.lrc format) stored in Supabase Storage';
+```
+
+#### Step 2: Create Lyrics Storage Bucket
+
+1. Go to your Supabase Dashboard
+2. Navigate to **Storage** section
+3. Click **Create a new bucket**
+4. Configure the bucket:
+   - **Name**: `lyrics`
+   - **Public bucket**: Check this option (enable public access)
+   - **Allowed MIME types**: Leave empty or add `text/plain`
+   - **File size limit**: 1 MB (lyrics files are small)
+
+#### Step 3: Set Storage Policies for Lyrics Bucket
+
+Execute these SQL commands in Supabase SQL Editor:
+
+```sql
+-- Allow public read access to lyrics
+CREATE POLICY "Public Access to Lyrics" 
+ON storage.objects FOR SELECT 
+USING (bucket_id = 'lyrics');
+
+-- Allow authenticated users to upload lyrics (for admin)
+CREATE POLICY "Authenticated Upload Lyrics" 
+ON storage.objects FOR INSERT 
+WITH CHECK (
+  bucket_id = 'lyrics' 
+  AND auth.role() = 'authenticated'
+);
+
+-- Allow authenticated users to update lyrics
+CREATE POLICY "Authenticated Update Lyrics" 
+ON storage.objects FOR UPDATE 
+USING (
+  bucket_id = 'lyrics' 
+  AND auth.role() = 'authenticated'
+);
+
+-- Allow authenticated users to delete lyrics
+CREATE POLICY "Authenticated Delete Lyrics" 
+ON storage.objects FOR DELETE 
+USING (
+  bucket_id = 'lyrics' 
+  AND auth.role() = 'authenticated'
+);
+```
+
+#### Step 4: Verify the Migration
+
+Run these queries to verify the setup:
+
+```sql
+-- Check if lyricsUrl column exists
+SELECT column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_name = 'Songs' AND column_name = 'lyricsUrl';
+
+-- Check existing songs (should show NULL for lyricsUrl)
+SELECT id, title, artist, "lyricsUrl" 
+FROM "Songs" 
+LIMIT 5;
+```
+
+#### Step 5: Update Environment Variables
+
+Ensure your `.env` file includes:
+
+```env
+LYRICS_BUCKET=lyrics
+```
+
+#### Step 6: Test the Feature
+
+1. Restart your Flutter application
+2. Login as admin
+3. Edit an existing song or add a new one
+4. Upload a `.lrc` file in the lyrics section
+5. Save the song
+6. Play the song as a user - lyrics should display synchronized with playback
+
+### LRC File Format Guide
+
+LRC (Lyric) files use timestamps to sync lyrics with audio. Format:
+
+```
+[00:12.00]First line of lyrics
+[00:17.20]Second line of lyrics
+[00:21.10]Third line of lyrics
+[mm:ss.xx]Lyrics text
+```
+
+**Example LRC File:**
+
+```lrc
+[00:00.00]Song Title - Artist Name
+[00:05.00]
+[00:12.50]Walking down the street
+[00:15.80]Under the moonlight
+[00:19.20]Feeling so alive tonight
+[00:23.50]
+[00:25.00]Chorus:
+[00:26.30]We're dancing in the rain
+[00:29.60]Nothing else matters again
+[00:33.00]Just you and me, we're free
+```
+
+**Tips for Creating LRC Files:**
+- Use a lyrics editor like [LRC Maker](https://lrcmaker.com/)
+- Timestamps format: `[mm:ss.xx]` where mm=minutes, ss=seconds, xx=centiseconds
+- Empty lines can have just `[timestamp]` without text
+- Metadata can be included: `[ar:Artist]`, `[ti:Title]`, `[al:Album]`
+
+### Rollback Instructions
+
+If you need to remove the lyrics feature:
+
+```sql
+-- Remove lyricsUrl column
+ALTER TABLE "Songs" DROP COLUMN "lyricsUrl";
+
+-- Delete all policies for lyrics bucket
+DROP POLICY IF EXISTS "Public Access to Lyrics" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated Upload Lyrics" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated Update Lyrics" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated Delete Lyrics" ON storage.objects;
+
+-- Delete lyrics bucket (via Supabase Dashboard or API)
+-- This must be done through the Supabase Dashboard: Storage > lyrics > Delete bucket
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -296,6 +452,14 @@ See `SECURITY_GUIDE.md` for detailed security practices.
 - Check database RLS policies
 - Verify songs table has data
 - Check network connection
+
+**5. Lyrics not displaying or syncing incorrectly**
+- Verify the LRC file format is correct (use [LRC Maker](https://lrcmaker.com/) to validate)
+- Check if `lyricsUrl` column exists in database
+- Ensure lyrics bucket has public read access
+- Verify the LRC file is accessible via its public URL
+- Check timestamp format: `[mm:ss.xx]` (minutes:seconds.centiseconds)
+- Clear app cache and restart
 
 ## Contributing
 
@@ -328,13 +492,14 @@ For issues and questions:
 Future enhancements planned:
 - Playlist creation and management
 - Social sharing features
-- Lyrics display
 - Audio equalizer
 - Download for offline playback
 - Multi-language support
 - Artist profiles
 - Song recommendations
 - Advanced search and filters
+- Lyrics editing in admin panel
+- Multiple lyrics format support (TXT, SRT)
 
 ---
 

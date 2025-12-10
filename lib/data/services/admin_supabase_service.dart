@@ -13,6 +13,7 @@ abstract class AdminSupabaseService {
   Future<Either> deleteSong(String songId);
   Future<Either<String, String>> uploadSongFile(Uint8List fileBytes, String fileName);
   Future<Either<String, String>> uploadCoverImage(Uint8List fileBytes, String fileName);
+  Future<Either<String, String>> uploadLyricsFile(Uint8List fileBytes, String fileName);
   bool isAdmin(String email);
 }
 
@@ -23,6 +24,7 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
   String get _adminEmail => dotenv.env['ADMIN_EMAIL'] ?? 'phamngocpho@duck.com';
   String get _storageBucket => dotenv.env['SONGS_BUCKET'] ?? 'songs';
   String get _coverBucket => dotenv.env['COVERS_BUCKET'] ?? 'song-covers';
+  String get _lyricsBucket => dotenv.env['LYRICS_BUCKET'] ?? 'lyrics';
 
   @override
   bool isAdmin(String email) {
@@ -79,6 +81,36 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
       return Right(publicUrl);
     } catch (e) {
       return Left('Failed to upload cover: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<Either<String, String>> uploadLyricsFile(Uint8List fileBytes, String fileName) async {
+    try {
+      // Generate unique file name
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final uniqueFileName = 'lyrics_${timestamp}_$fileName';
+
+      // Upload lyrics file bytes to Supabase Storage
+      await _supabase.storage
+          .from(_lyricsBucket)
+          .uploadBinary(
+            uniqueFileName,
+            fileBytes,
+            fileOptions: const FileOptions(
+              contentType: 'text/plain',
+              upsert: false,
+            ),
+          );
+
+      // Get public URL
+      final publicUrl = _supabase.storage
+          .from(_lyricsBucket)
+          .getPublicUrl(uniqueFileName);
+
+      return Right(publicUrl);
+    } catch (e) {
+      return Left('Failed to upload lyrics: ${e.toString()}');
     }
   }
 

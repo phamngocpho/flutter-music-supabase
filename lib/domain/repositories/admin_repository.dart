@@ -9,6 +9,7 @@ abstract class AdminRepository {
   Future<Either> deleteSong(String songId);
   Future<Either<String, String>> uploadSongFile(Uint8List fileBytes, String fileName);
   Future<Either<String, String>> uploadCoverImage(Uint8List fileBytes, String fileName);
+  Future<Either<String, String>> uploadLyricsFile(Uint8List fileBytes, String fileName);
   bool isAdmin(String email);
 }
 

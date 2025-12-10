@@ -6,6 +6,7 @@ class CreateSongRequest {
   final String url;
   final String? coverUrl;
   final String? genre;
+  final String? lyricsUrl;
 
   CreateSongRequest({
     required this.title,
@@ -15,6 +16,7 @@ class CreateSongRequest {
     required this.url,
     this.coverUrl,
     this.genre,
+    this.lyricsUrl,
   });
 
   Map<String, dynamic> toJson() {
@@ -26,6 +28,7 @@ class CreateSongRequest {
       'url': url,
       'coverUrl': coverUrl,
       'genre': genre,
+      'lyricsUrl': lyricsUrl,
     };
   }
 }
@@ -39,6 +42,7 @@ class UpdateSongRequest {
   final String url;
   final String? coverUrl;
   final String? genre;
+  final String? lyricsUrl;
 
   UpdateSongRequest({
     required this.id,
@@ -49,6 +53,7 @@ class UpdateSongRequest {
     required this.url,
     this.coverUrl,
     this.genre,
+    this.lyricsUrl,
   });
 
   Map<String, dynamic> toJson() {
@@ -60,6 +65,7 @@ class UpdateSongRequest {
       'url': url,
       'coverUrl': coverUrl,
       'genre': genre,
+      'lyricsUrl': lyricsUrl,
     };
   }
 }

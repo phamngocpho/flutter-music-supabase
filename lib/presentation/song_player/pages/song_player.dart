@@ -4,11 +4,12 @@ import 'package:spotify/shared/widgets/basic_app_bar.dart';
 import 'package:spotify/domain/entities/song_entity.dart';
 import 'package:spotify/presentation/song_player/bloc/song_player_cubit.dart';
 import 'package:spotify/presentation/song_player/bloc/song_player_state.dart';
+import 'package:spotify/shared/widgets/lyrics_display.dart';
 
 import 'package:spotify/shared/widgets/favorite_button.dart';
 import 'package:spotify/core/theme/app_colors.dart';
 
-class SongPlayerPage extends StatelessWidget {
+class SongPlayerPage extends StatefulWidget {
   final SongEntity songEntity;
   const SongPlayerPage({
     required this.songEntity,
@@ -16,8 +17,27 @@ class SongPlayerPage extends StatelessWidget {
   });
 
   @override
+  State<SongPlayerPage> createState() => _SongPlayerPageState();
+}
+
+class _SongPlayerPageState extends State<SongPlayerPage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: widget.songEntity.lyricsUrl != null ? 2 : 1, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return  Scaffold(
+    return Scaffold(
       appBar: BasicAppbar(
         title: const Text(
           'Now playing',
@@ -34,28 +54,108 @@ class SongPlayerPage extends StatelessWidget {
       ),
       body: BlocProvider(
         create: (_) => SongPlayerCubit()..loadSong(
-            songEntity.url
+            widget.songEntity.url
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 16
-          ),
-          child: Builder(
-              builder: (context) {
-                return Column(
-                  children: [
-                    _songCover(context),
-                    const SizedBox(height: 20,),
-                    _songDetail(),
-                    const SizedBox(height: 30,),
-                    _songPlayer(context)
+        child: Column(
+          children: [
+            // Tab indicator
+            if (widget.songEntity.lyricsUrl != null)
+              Container(
+                color: Colors.transparent,
+                child: TabBar(
+                  controller: _tabController,
+                  indicatorColor: AppColors.primary,
+                  labelColor: AppColors.primary,
+                  unselectedLabelColor: Colors.grey,
+                  tabs: const [
+                    Tab(icon: Icon(Icons.album), text: 'Cover'),
+                    Tab(icon: Icon(Icons.lyrics), text: 'Lyrics'),
                   ],
-                );
-              }
-          ),
+                ),
+              ),
+            // Tab content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: widget.songEntity.lyricsUrl != null
+                  ? [
+                      _buildCoverTab(context),
+                      _buildLyricsTab(context),
+                    ]
+                  : [
+                      _buildCoverTab(context),
+                    ],
+              ),
+            ),
+            // Player controls (luôn hiển thị ở dưới)
+            Builder(
+              builder: (context) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: _songPlayer(context),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCoverTab(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      child: Column(
+        children: [
+          _songCover(context),
+          const SizedBox(height: 20),
+          _songDetail(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLyricsTab(BuildContext context) {
+    return BlocBuilder<SongPlayerCubit, SongPlayerState>(
+      builder: (context, state) {
+        if (state is SongPlayerLoaded) {
+          return Column(
+            children: [
+              // Song detail ở trên
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                child: _songDetail(),
+              ),
+              // Lyrics display chiếm toàn bộ không gian còn lại
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade900,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: LyricsDisplay(
+                      lyricsUrl: widget.songEntity.lyricsUrl!,
+                      currentPosition: state.position,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          );
+        }
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _songDetail(),
+              const SizedBox(height: 20),
+              const CircularProgressIndicator(),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -68,9 +168,9 @@ class SongPlayerPage extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(30),
-        child: songEntity.coverUrl != null
+        child: widget.songEntity.coverUrl != null
             ? Image.network(
-          songEntity.coverUrl!,
+          widget.songEntity.coverUrl!,
           fit: BoxFit.cover,
           width: double.infinity,
           errorBuilder: (context, error, stackTrace) {
@@ -96,7 +196,7 @@ class SongPlayerPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              songEntity.title,
+              widget.songEntity.title,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 24,
@@ -118,7 +218,7 @@ class SongPlayerPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              songEntity.title,
+              widget.songEntity.title,
               style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 22
@@ -126,7 +226,7 @@ class SongPlayerPage extends StatelessWidget {
             ),
             const SizedBox(height: 5, ),
             Text(
-              songEntity.artist,
+              widget.songEntity.artist,
               style: const TextStyle(
                   fontWeight: FontWeight.w400,
                   fontSize: 14
@@ -135,11 +235,12 @@ class SongPlayerPage extends StatelessWidget {
           ],
         ),
         FavoriteButton(
-            songEntity: songEntity
+            songEntity: widget.songEntity
         )
       ],
     );
   }
+
 
   Widget _songPlayer(BuildContext context) {
     return BlocBuilder<SongPlayerCubit,SongPlayerState>(
@@ -148,12 +249,18 @@ class SongPlayerPage extends StatelessWidget {
           return const CircularProgressIndicator();
         }
         if(state is SongPlayerLoaded) {
+          final duration = state.duration.inSeconds.toDouble();
+          final position = state.position.inSeconds.toDouble();
+          // Đảm bảo max >= 1 để tránh lỗi và clamp position trong khoảng hợp lệ
+          final maxValue = duration > 0 ? duration : 1.0;
+          final currentValue = position.clamp(0.0, maxValue);
+
           return Column(
             children: [
               Slider(
-                  value: state.position.inSeconds.toDouble(),
+                  value: currentValue,
                   min: 0.0,
-                  max: state.duration.inSeconds.toDouble(),
+                  max: maxValue,
                   onChanged: (value) {
                     context.read<SongPlayerCubit>().seekToPosition(
                         Duration(seconds: value.toInt())
