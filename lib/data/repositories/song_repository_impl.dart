@@ -29,5 +29,10 @@ class SongRepositoryImpl extends SongsRepository {
   Future<Either> getUserFavoriteSongs() async {
     return await sl<SongSupabaseService>().getUserFavoriteSongs();
   }
+
+  @override
+  Future<Either> searchSongs(String query) async {
+    return await sl<SongSupabaseService>().searchSongs(query);
+  }
 }
 

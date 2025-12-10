@@ -7,9 +7,9 @@ import 'package:spotify/presentation/home/widgets/news_songs.dart';
 import 'package:spotify/presentation/home/widgets/play_list.dart';
 import 'package:spotify/presentation/home/widgets/artist_list_tab.dart';
 import 'package:spotify/presentation/home/widgets/genre_list_tab.dart';
+import 'package:spotify/presentation/home/widgets/search_bar_widget.dart';
 import 'package:spotify/presentation/profile/pages/profile.dart';
 import 'package:spotify/presentation/auth/pages/signup_or_siginin.dart';
-
 import 'package:spotify/shared/widgets/basic_app_bar.dart';
 import 'package:spotify/core/constants/app_vectors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,17 +23,23 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+
   @override
-  void initState(){
+  void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
   }
-  
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       appBar: BasicAppbar(
+      appBar: BasicAppbar(
         hideBack: true,
         action: PopupMenuButton<String>(
           icon: const Icon(Icons.person),
@@ -41,7 +47,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             if (value == 'profile') {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfilePage())
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
               );
             } else if (value == 'logout') {
               await Supabase.instance.client.auth.signOut();
@@ -49,7 +55,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const SignupOrSigninPage()),
-                  (route) => false,
+                      (route) => false,
                 );
               }
             }
@@ -89,6 +95,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SearchBarWidget(),
             _homeTopCard(),
             _tabs(),
             SizedBox(
@@ -110,7 +117,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _homeTopCard(){
+  Widget _homeTopCard() {
     return Center(
       child: SizedBox(
         height: 140,
@@ -118,19 +125,13 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           children: [
             Align(
               alignment: Alignment.bottomCenter,
-              child: SvgPicture.asset(
-                AppVectors.homeTopCard
-              ),
+              child: SvgPicture.asset(AppVectors.homeTopCard),
             ),
             Align(
               alignment: Alignment.bottomRight,
               child: Padding(
-                padding: const EdgeInsets.only(
-                  right: 60
-                ),
-                child: Image.asset(
-                  AppImages.homeArtist
-                ),
+                padding: const EdgeInsets.only(right: 60),
+                child: Image.asset(AppImages.homeArtist),
               ),
             )
           ],
@@ -145,38 +146,23 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       isScrollable: true,
       labelColor: context.isDarkMode ? Colors.white : Colors.black,
       indicatorColor: AppColors.primary,
-      padding: const EdgeInsets.symmetric(
-        vertical: 40,
-        horizontal: 16
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 16),
       tabs: const [
         Text(
           'News',
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 16
-          ),
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
         ),
         Text(
           'Videos',
-           style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 16
-          ),
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
         ),
         Text(
           'Artists',
-           style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 16
-          ),
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
         ),
         Text(
           'Genres',
-           style: TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 16
-          ),
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
         )
       ],
     );

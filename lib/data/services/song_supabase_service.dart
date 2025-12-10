@@ -12,6 +12,7 @@ abstract class SongSupabaseService {
   Future<Either> addOrRemoveFavoriteSong(String songId);
   Future<bool> isFavoriteSong(String songId);
   Future<Either> getUserFavoriteSongs();
+  Future<Either> searchSongs(String query);
 }
 
 class SongSupabaseServiceImpl extends SongSupabaseService {
@@ -174,6 +175,39 @@ class SongSupabaseServiceImpl extends SongSupabaseService {
     } catch (e) {
       print(e);
       return const Left('An error occurred');
+    }
+  }
+
+  @override
+  Future<Either> searchSongs(String query) async {
+    try {
+      if (query.isEmpty) {
+        return Right(<SongEntity>[]);
+      }
+
+      List<SongEntity> songs = [];
+      
+      // Tìm kiếm theo title và artist (case-insensitive)
+      var data = await _supabase
+        .from('Songs')
+        .select()
+        .or('title.ilike.%$query%,artist.ilike.%$query%')
+        .order('releaseDate', ascending: false);
+
+      for (var element in data) {
+        var songModel = SongModel.fromJson(element);
+        bool isFavorite = await sl<IsFavoriteSongUseCase>().call(
+          params: element['id'].toString()
+        );
+        songModel.isFavorite = isFavorite;
+        songModel.songId = element['id'].toString();
+        songs.add(songModel.toEntity());
+      }
+
+      return Right(songs);
+    } catch (e) {
+      print(e);
+      return const Left('An error occurred while searching. Please try again.');
     }
   }
 }

@@ -22,26 +22,26 @@ class SongPlayerPage extends StatelessWidget {
         title: const Text(
           'Now playing',
           style: TextStyle(
-            fontSize: 18
+              fontSize: 18
           ),
         ),
         action: IconButton(
-          onPressed: (){},
-          icon: const Icon(
-            Icons.more_vert_rounded
-          )
+            onPressed: (){},
+            icon: const Icon(
+                Icons.more_vert_rounded
+            )
         ),
       ),
       body: BlocProvider(
         create: (_) => SongPlayerCubit()..loadSong(
-          songEntity.url
+            songEntity.url
         ),
         child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
               vertical: 16,
               horizontal: 16
-            ),
-            child: Builder(
+          ),
+          child: Builder(
               builder: (context) {
                 return Column(
                   children: [
@@ -53,10 +53,10 @@ class SongPlayerPage extends StatelessWidget {
                   ],
                 );
               }
-            ),
           ),
+        ),
       ),
-      );
+    );
   }
 
   Widget _songCover(BuildContext context) {
@@ -70,13 +70,13 @@ class SongPlayerPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         child: songEntity.coverUrl != null
             ? Image.network(
-                songEntity.coverUrl!,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) {
-                  return _buildCoverPlaceholder();
-                },
-              )
+          songEntity.coverUrl!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildCoverPlaceholder();
+          },
+        )
             : _buildCoverPlaceholder(),
       ),
     );
@@ -120,23 +120,23 @@ class SongPlayerPage extends StatelessWidget {
             Text(
               songEntity.title,
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 22
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22
               ),
             ),
             const SizedBox(height: 5, ),
-              Text(
-                songEntity.artist,
-                style: const TextStyle(
+            Text(
+              songEntity.artist,
+              style: const TextStyle(
                   fontWeight: FontWeight.w400,
                   fontSize: 14
-                ),
               ),
+            ),
           ],
         ),
-          FavoriteButton(
+        FavoriteButton(
             songEntity: songEntity
-          )
+        )
       ],
     );
   }
@@ -146,152 +146,152 @@ class SongPlayerPage extends StatelessWidget {
       builder: (context, state) {
         if(state is SongPlayerLoading){
           return const CircularProgressIndicator();
-        } 
+        }
         if(state is SongPlayerLoaded) {
           return Column(
             children: [
               Slider(
-                value: state.position.inSeconds.toDouble(),
-                min: 0.0,
-                max: state.duration.inSeconds.toDouble(),
-                onChanged: (value) {
-                  context.read<SongPlayerCubit>().seekToPosition(
-                    Duration(seconds: value.toInt())
-                  );
-                }
-             ),
-             const SizedBox(height: 20,),
-             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  formatDuration(state.position)
-                ),
+                  value: state.position.inSeconds.toDouble(),
+                  min: 0.0,
+                  max: state.duration.inSeconds.toDouble(),
+                  onChanged: (value) {
+                    context.read<SongPlayerCubit>().seekToPosition(
+                        Duration(seconds: value.toInt())
+                    );
+                  }
+              ),
+              const SizedBox(height: 20,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                      formatDuration(state.position)
+                  ),
 
-                Text(
-                  formatDuration(state.duration)
-                )
-              ],
-             ),
-             const SizedBox(height: 20,),
+                  Text(
+                      formatDuration(state.duration)
+                  )
+                ],
+              ),
+              const SizedBox(height: 20,),
 
-             // Player controls with skip buttons
-             Row(
-               mainAxisAlignment: MainAxisAlignment.center,
-               children: [
-                 // Skip backward button (-10s)
-                 IconButton(
-                   iconSize: 35,
-                   onPressed: () {
-                     context.read<SongPlayerCubit>().skipBackward();
-                   },
-                   icon: const Icon(Icons.replay_10),
-                 ),
+              // Player controls with skip buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Skip backward button (-10s)
+                  IconButton(
+                    iconSize: 35,
+                    onPressed: () {
+                      context.read<SongPlayerCubit>().skipBackward();
+                    },
+                    icon: const Icon(Icons.replay_10),
+                  ),
 
-                 const SizedBox(width: 20),
+                  const SizedBox(width: 20),
 
-                 // Play/Pause button (main)
-                 GestureDetector(
-                   onTap: () {
-                     context.read<SongPlayerCubit>().playOrPauseSong();
-                   },
-                   child: Container(
-                     height: 60,
-                     width: 60,
-                     decoration: const BoxDecoration(
-                       shape: BoxShape.circle,
-                       color: AppColors.primary
-                     ),
-                     child: state.isBuffering
-                         ? const Padding(
-                             padding: EdgeInsets.all(15.0),
-                             child: CircularProgressIndicator(
-                               color: Colors.white,
-                               strokeWidth: 3,
-                             ),
-                           )
-                         : Icon(
-                             state.isPlaying ? Icons.pause : Icons.play_arrow,
-                             size: 30,
-                           ),
-                   ),
-                 ),
+                  // Play/Pause button (main)
+                  GestureDetector(
+                    onTap: () {
+                      context.read<SongPlayerCubit>().playOrPauseSong();
+                    },
+                    child: Container(
+                      height: 60,
+                      width: 60,
+                      decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary
+                      ),
+                      child: state.isBuffering
+                          ? const Padding(
+                        padding: EdgeInsets.all(15.0),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                          : Icon(
+                        state.isPlaying ? Icons.pause : Icons.play_arrow,
+                        size: 30,
+                      ),
+                    ),
+                  ),
 
-                 const SizedBox(width: 20),
+                  const SizedBox(width: 20),
 
-                 // Skip forward button (+10s)
-                 IconButton(
-                   iconSize: 35,
-                   onPressed: () {
-                     context.read<SongPlayerCubit>().skipForward();
-                   },
-                   icon: const Icon(Icons.forward_10),
-                 ),
-               ],
-             ),
+                  // Skip forward button (+10s)
+                  IconButton(
+                    iconSize: 35,
+                    onPressed: () {
+                      context.read<SongPlayerCubit>().skipForward();
+                    },
+                    icon: const Icon(Icons.forward_10),
+                  ),
+                ],
+              ),
 
-             const SizedBox(height: 30),
+              const SizedBox(height: 30),
 
-             // Additional controls row
-             Row(
-               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-               children: [
-                 // Stop button
-                 IconButton(
-                   icon: const Icon(Icons.stop),
-                   iconSize: 28,
-                   onPressed: () {
-                     context.read<SongPlayerCubit>().stopSong();
-                   },
-                 ),
+              // Additional controls row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Stop button
+                  IconButton(
+                    icon: const Icon(Icons.stop),
+                    iconSize: 28,
+                    onPressed: () {
+                      context.read<SongPlayerCubit>().stopSong();
+                    },
+                  ),
 
-                 // Speed control
-                 PopupMenuButton<double>(
-                   icon: const Icon(Icons.speed),
-                   onSelected: (speed) {
-                     context.read<SongPlayerCubit>().setSpeed(speed);
-                   },
-                   itemBuilder: (context) => [
-                     const PopupMenuItem(
-                       value: 0.5,
-                       child: Text('0.5x'),
-                     ),
-                     const PopupMenuItem(
-                       value: 0.75,
-                       child: Text('0.75x'),
-                     ),
-                     const PopupMenuItem(
-                       value: 1.0,
-                       child: Text('1.0x (Normal)'),
-                     ),
-                     const PopupMenuItem(
-                       value: 1.25,
-                       child: Text('1.25x'),
-                     ),
-                     const PopupMenuItem(
-                       value: 1.5,
-                       child: Text('1.5x'),
-                     ),
-                     const PopupMenuItem(
-                       value: 2.0,
-                       child: Text('2.0x'),
-                     ),
-                   ],
-                 ),
+                  // Speed control
+                  PopupMenuButton<double>(
+                    icon: const Icon(Icons.speed),
+                    onSelected: (speed) {
+                      context.read<SongPlayerCubit>().setSpeed(speed);
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 0.5,
+                        child: Text('0.5x'),
+                      ),
+                      const PopupMenuItem(
+                        value: 0.75,
+                        child: Text('0.75x'),
+                      ),
+                      const PopupMenuItem(
+                        value: 1.0,
+                        child: Text('1.0x (Normal)'),
+                      ),
+                      const PopupMenuItem(
+                        value: 1.25,
+                        child: Text('1.25x'),
+                      ),
+                      const PopupMenuItem(
+                        value: 1.5,
+                        child: Text('1.5x'),
+                      ),
+                      const PopupMenuItem(
+                        value: 2.0,
+                        child: Text('2.0x'),
+                      ),
+                    ],
+                  ),
 
-                 // Volume control
-                 IconButton(
-                   icon: const Icon(Icons.volume_up),
-                   iconSize: 28,
-                   onPressed: () {
-                     // Capture the cubit before opening dialog
-                     final cubit = context.read<SongPlayerCubit>();
-                     // Show volume dialog
-                     _showVolumeDialog(context, cubit);
-                   },
-                 ),
-               ],
-             ),
+                  // Volume control
+                  IconButton(
+                    icon: const Icon(Icons.volume_up),
+                    iconSize: 28,
+                    onPressed: () {
+                      // Capture the cubit before opening dialog
+                      final cubit = context.read<SongPlayerCubit>();
+                      // Show volume dialog
+                      _showVolumeDialog(context, cubit);
+                    },
+                  ),
+                ],
+              ),
             ],
           );
         }

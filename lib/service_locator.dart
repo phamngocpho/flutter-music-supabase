@@ -12,6 +12,7 @@ import 'package:spotify/domain/usecases/get_favorite_songs_usecase.dart';
 import 'package:spotify/domain/usecases/get_news_songs_usecase.dart';
 import 'package:spotify/domain/usecases/get_playlist_usecase.dart';
 import 'package:spotify/domain/usecases/is_favorite_song_usecase.dart';
+import 'package:spotify/domain/usecases/search_songs_usecase.dart';
 import 'package:spotify/domain/usecases/admin/add_song_usecase.dart';
 import 'package:spotify/domain/usecases/admin/update_song_usecase.dart';
 import 'package:spotify/domain/usecases/admin/delete_song_usecase.dart';
@@ -74,6 +75,10 @@ Future<void> initializeDependencies() async {
 
   sl.registerSingleton<GetFavoriteSongsUseCase>(
     GetFavoriteSongsUseCase()
+  );
+
+  sl.registerSingleton<SearchSongsUseCase>(
+    SearchSongsUseCase()
   );
 
   // Admin dependencies
