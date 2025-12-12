@@ -91,14 +91,14 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final uniqueFileName = 'lyrics_${timestamp}_$fileName';
 
-      // Upload lyrics file bytes to Supabase Storage
+      // Upload lyrics file bytes to Supabase Storage with UTF-8 charset
       await _supabase.storage
           .from(_lyricsBucket)
           .uploadBinary(
             uniqueFileName,
             fileBytes,
             fileOptions: const FileOptions(
-              contentType: 'text/plain',
+              contentType: 'text/plain; charset=utf-8',
               upsert: false,
             ),
           );

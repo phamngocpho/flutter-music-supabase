@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:spotify/core/utils/lrc_parser.dart';
 
 class LyricsDisplay extends StatefulWidget {
@@ -42,7 +43,8 @@ class _LyricsDisplayState extends State<LyricsDisplay> {
     try {
       final response = await http.get(Uri.parse(widget.lyricsUrl));
       if (response.statusCode == 200) {
-        final lrcContent = response.body;
+        // Explicitly decode as UTF-8 to handle Vietnamese characters
+        final lrcContent = utf8.decode(response.bodyBytes);
         setState(() {
           _lrcLines = LrcParser.parse(lrcContent);
           _isLoading = false;
