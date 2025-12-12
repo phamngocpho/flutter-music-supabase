@@ -31,12 +31,64 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
     return email.toLowerCase() == _adminEmail.toLowerCase();
   }
 
+  // Helper function to sanitize file names
+  String _sanitizeFileName(String fileName) {
+    // Map of Vietnamese characters to their non-accented equivalents
+    const vietnameseMap = {
+      'á': 'a', 'à': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
+      'ă': 'a', 'ắ': 'a', 'ằ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
+      'â': 'a', 'ấ': 'a', 'ầ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
+      'é': 'e', 'è': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
+      'ê': 'e', 'ế': 'e', 'ề': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
+      'í': 'i', 'ì': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
+      'ó': 'o', 'ò': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
+      'ô': 'o', 'ố': 'o', 'ồ': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
+      'ơ': 'o', 'ớ': 'o', 'ờ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
+      'ú': 'u', 'ù': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
+      'ư': 'u', 'ứ': 'u', 'ừ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
+      'ý': 'y', 'ỳ': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
+      'đ': 'd',
+      'Á': 'A', 'À': 'A', 'Ả': 'A', 'Ã': 'A', 'Ạ': 'A',
+      'Ă': 'A', 'Ắ': 'A', 'Ằ': 'A', 'Ẳ': 'A', 'Ẵ': 'A', 'Ặ': 'A',
+      'Â': 'A', 'Ấ': 'A', 'Ầ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ậ': 'A',
+      'É': 'E', 'È': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ẹ': 'E',
+      'Ê': 'E', 'Ế': 'E', 'Ề': 'E', 'Ể': 'E', 'Ễ': 'E', 'Ệ': 'E',
+      'Í': 'I', 'Ì': 'I', 'Ỉ': 'I', 'Ĩ': 'I', 'Ị': 'I',
+      'Ó': 'O', 'Ò': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ọ': 'O',
+      'Ô': 'O', 'Ố': 'O', 'Ồ': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ộ': 'O',
+      'Ơ': 'O', 'Ớ': 'O', 'Ờ': 'O', 'Ở': 'O', 'Ỡ': 'O', 'Ợ': 'O',
+      'Ú': 'U', 'Ù': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ụ': 'U',
+      'Ư': 'U', 'Ứ': 'U', 'Ừ': 'U', 'Ử': 'U', 'Ữ': 'U', 'Ự': 'U',
+      'Ý': 'Y', 'Ỳ': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y', 'Ỵ': 'Y',
+      'Đ': 'D',
+    };
+
+    String sanitized = fileName;
+
+    // Replace Vietnamese characters
+    vietnameseMap.forEach((key, value) {
+      sanitized = sanitized.replaceAll(key, value);
+    });
+
+    // Replace spaces with underscores
+    sanitized = sanitized.replaceAll(' ', '_');
+
+    // Remove any special characters except dots, underscores, and hyphens
+    sanitized = sanitized.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '');
+
+    // Remove multiple consecutive underscores
+    sanitized = sanitized.replaceAll(RegExp(r'_+'), '_');
+
+    return sanitized;
+  }
+
   @override
   Future<Either<String, String>> uploadSongFile(Uint8List fileBytes, String fileName) async {
     try {
-      // Generate unique file name
+      // Generate unique file name with sanitized original name
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final uniqueFileName = '${timestamp}_$fileName';
+      final sanitizedName = _sanitizeFileName(fileName);
+      final uniqueFileName = '${timestamp}_$sanitizedName';
 
       // Upload file bytes to Supabase Storage
       await _supabase.storage
@@ -87,9 +139,10 @@ class AdminSupabaseServiceImpl extends AdminSupabaseService {
   @override
   Future<Either<String, String>> uploadLyricsFile(Uint8List fileBytes, String fileName) async {
     try {
-      // Generate unique file name
+      // Generate unique file name with sanitized original name
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final uniqueFileName = 'lyrics_${timestamp}_$fileName';
+      final sanitizedName = _sanitizeFileName(fileName);
+      final uniqueFileName = 'lyrics_${timestamp}_$sanitizedName';
 
       // Upload lyrics file bytes to Supabase Storage with UTF-8 charset
       await _supabase.storage
